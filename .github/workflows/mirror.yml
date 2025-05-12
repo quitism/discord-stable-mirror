@@ -1,0 +1,35 @@
+name: Mirror Discord Stable Feed
+
+on:
+  schedule:
+    - cron: '0 4 * * *'  # daily at 04:00 UTC
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download RELEASES
+        run: |
+          mkdir -p stable
+          curl -sSfL \
+            https://dl.discordapp.net/distro/app/stable/win/x64/RELEASES \
+            -o stable/RELEASES
+
+      - name: Download new packages
+        run: |
+          grep -oP '\S+\.nupkg' stable/RELEASES |
+          while read pkg; do
+            [ -f "stable/$pkg" ] ||
+            curl -sSfL \
+              https://dl.discordapp.net/distro/app/stable/win/x64/$pkg \
+              -o stable/$pkg
+          done
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add stable/
+          git diff --quiet || git commit -m "Update Discord stable feed" && git push
