@@ -1,0 +1,2 @@
+# discord-stable-mirror
+idk
